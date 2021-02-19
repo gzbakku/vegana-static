@@ -5,10 +5,16 @@ global.engine = require("./engine/index");
 global.common = require("./common");
 global.cmd = require("./cmd_mod");
 global.io = require("./io");
+global.document = {
+  getElementsByTagName:()=>{return [];}
+};
+global.window = {
+  addEventListener:()=>{}
+};
 
 async function main(){
 
-  if(true && !await builder.init.init()){
+  if(false && !await builder.init.init()){
     return common.error("failed initiate builder");
   }
 

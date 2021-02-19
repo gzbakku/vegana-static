@@ -1,6 +1,7 @@
 
 
 let functions = [];
+let primary_functions = [];
 let apis = [];
 
 let elements = {};
@@ -22,7 +23,7 @@ module.exports = {
     return last_id_num;
   },
 
-  get_class_num:()=>{
+  get_var_num:()=>{
     last_class_num += 1;
     return last_class_num;
   },
@@ -54,15 +55,17 @@ module.exports = {
       apis.push(a);
     }
   },
+  add_apis:(p)=>{for(let a of p){apis.push(a);}},
 
   element:{
     add:(element)=>{
       if(!children[element.parent]){children[element.parent] = [];}
       children[element.parent].push(element.id);
       elements[element.id] = element;
+      return true;
     },
     get:(id)=>{return elements[id];},
-    update:(id,element)=>{elements[id] = element;}
+    update:(id,element)=>{elements[id] = element;return true;}
   },
 
   meta:{
@@ -82,11 +85,14 @@ module.exports = {
 
     let build = compile_element("router");
 
-    // functions.push("\nconsole.log('one');\n");
-    // functions.push("\nconsole.log('two');\n");
-    // functions.push("\nlet fs8d97f89789s7df897 = 'hello'\n");
-
     let functions_compile = '';
+
+    mine_apis(apis);
+    let build_primary_functions = collect_apis();
+
+    for(let func of primary_functions){functions_compile += '\n' + func + '\n';}
+
+    functions_compile += build_primary_functions;
     for(let func of functions){functions_compile += '\n' + func + '\n';}
 
     let script = wrap_element("script",{},functions_compile);
@@ -111,20 +117,149 @@ module.exports = {
 
 };
 
+function get_last(api){
+  let hold = api.split(".");
+  return hold[hold.length-1];
+}
+
+function collect_apis(){
+
+  let build = {};
+
+  for(let api of apis){
+    let last = get_last(api);
+    let func = get_api(api);
+    let hold = build;
+    for(let route of api.split(".")){
+      if(!hold[route]){
+        if(route === last){
+          hold[route] = func;
+        } else {
+          hold[route] = {};
+        }
+      }
+      hold = hold[route];
+    }
+  }
+
+  let stringify = stringify_function_tree(build.engine,1);
+
+  let final = '\nwindow.engine=' + stringify + "\n";
+
+  // console.log(stringify);
+
+  return final;
+
+}
+
+function tabify_function_string(f,w){
+  let collect = '';
+  let lines = f.split("\n");
+  let first = lines[0];
+  let last = lines[lines.length-1];
+  for(let l of lines){
+    l = de_tabify_function_line(l);
+    if(l === first){
+      collect += l;
+    } else if(l === last){
+      collect += "\n" + w + l;
+    } else {
+      collect += "\n" + w + ' ' + l;
+    }
+  }
+  return collect;
+}
+
+function de_tabify_function_line(l){
+  while(l.indexOf("\t") >= 0){
+    l = l.replace("\t"," ");
+  }
+  return l;
+}
+
+function capitalizeFirstLetter(string) {
+  return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+function stringify_function_tree(o,l){
+  let collect = '{';
+  let whiteSpace = '';for(let i=0;i<l;i++){whiteSpace += ' ';}
+  for(let k in o){
+    if(typeof(o[k]) === "object"){
+      collect += '\n' + whiteSpace + k + ":" + stringify_function_tree(o[k],l+1) + ',\n'
+    } else {
+      if(k === "creator" || k === "uniqid"){
+        let map = builder.map.get();
+        // if(k === 'uniqid'){console.log(map.packs[k]);}
+        primary_functions.push(map.packs[k]);
+        collect += '\n' + whiteSpace + k + ":" + capitalizeFirstLetter(k) + ','
+      } else {
+        collect += '\n' + whiteSpace + k + ":" + tabify_function_string(o[k].toString(),whiteSpace) + ','
+      }
+
+    }
+  }
+  collect += '\n' + whiteSpace + "}"
+  return collect;
+}
+
+function mine_apis(apis){
+  let collect = [];
+  for(let api of apis){
+    for(let a of builder.extract.apis(get_api(api).toString())){
+      collect.push(a);
+    }
+  }
+  for(let api of collect){
+    for(let a of builder.extract.apis(get_api(api).toString())){
+      collect.push(a);
+    }
+  }
+  for(let a of collect){apis.push(a);}
+}
+
+function get_api(api){
+  let pool = api.split(".");
+  let map = builder.map.get();
+  let hold = map.engine;
+  for(let i of pool){
+    if(i !== "engine"){
+      if(!hold[i]){
+        return false;
+      } else {
+        hold = hold[i];
+      }
+    }
+  }
+  return hold;
+}
+
 function compile_element(id){
   let compiled_children = '';
+  let element = elements[id];
+  if(element.text){compiled_children += element.text;}
   if(children[id]){
     for(let child of children[id]){
       compiled_children += compile_element(child);
     }
   }
-  let element = elements[id];
+  if(element.apis && element.apis.length > 0){
+    for(let api of element.apis){
+      apis.push(api);
+    }
+  }
   if(element.functions){
     for(let func of element.functions){
       builder.add_function(func);
     }
   }
-  if(element.tag === "div" && element.text){compiled_children += element.text;}
+  if(element.style){
+    let collect_style = '';
+    for(let style in element.style){
+      collect_style += style + ':' + element.style[style] + ';';
+    }
+    element.options.style = collect_style;
+  }
   let final = make_element(element,compiled_children);
   return final;
 }
@@ -148,7 +283,7 @@ function wrap_element(tag,options,children){
   }
   let make = `<${tag}${collect_options}>`;
   if(children){make += children;}
-  make += `</${tag}>`;
+  make += `</${tag}>\n`;
   return make;
 }
 
