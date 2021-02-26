@@ -3,7 +3,7 @@ module.exports= {
   kill : false,
 
   tell : function(message,control){
-    if(control == true || this.kill == true){
+    if(control === true || this.kill === true){
       console.log('>>> ' + message);
     }
     return true;
@@ -13,7 +13,7 @@ module.exports= {
     if(data){
       console.log(data);
     }
-    console.log('!!! ' + error);
+    console.error('!!! ' + error);
     return false;
   }
 

@@ -2,36 +2,17 @@
 module.exports = {
 
   object : function(key,object){
-    if(!key){
-      return common.error('not_found-key');
-    }
-    if(!object){
-      return common.error('not_found-object');
-    }
-    engine['global']['object'][key] = object;
-    return true;
+    return builder.global.add.object(key,object);
   },
 
-  function : function(key,func){
-    if(!key){
-      return common.error('not_found-key');
-    }
-    if(!func){
-      return common.error('not_found-func');
-    }
-    engine['global']['function'][key] = func;
-    return true;
+  function : function(key,object,static_path){
+    return builder.global.add.function(key,object,static_path);
   },
 
-  comp : function(key,mod){
-    if(!key){
-      return common.error('not_found-key');
-    }
-    if(!mod){
-      return common.error('not_found-module');
-    }
-    engine['global']['comp'][key] = mod;
-    return true;
+  comp : function(key,object,add_to_static,static_path){
+    if(!add_to_static){return true;}
+    if(!static_path){return common.error("static path is required to add comp to page build.");}
+    return builder.global.add.comp(key,object,static_path);
   }
 
 };

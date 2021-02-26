@@ -11,7 +11,13 @@ module.exports = {
       ${func_name}(${JSON.stringify(d)});
     `);
   },
-  publish:()=>{
-    return builder.publish();
-  }
+  publish:async ()=>{
+    return await builder.publish();
+  },
+  add:{
+    globalComp:(compName)=>{return builder.lazyModules.add.globalComp(compName);},
+    page:(pageName)=>{return builder.lazyModules.add.page(pageName);},
+    cont:(pageName,contName)=>{return builder.lazyModules.add.cont(pageName,contName);},
+    panel:(pageName,contName,panelName)=>{return builder.lazyModules.add.panel(pageName,contName,panelName);}
+  },
 };

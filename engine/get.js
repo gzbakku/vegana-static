@@ -9,6 +9,7 @@ module.exports = {
   element:(id)=>{return false;},
 
   platform:(data)=>{
+    if(data === "static"){return true;}
     if(data && data !== "static"){return false;}
     if(!data){return 'static';}
   },
@@ -32,9 +33,14 @@ module.exports = {
 
   panelModule : function(pageName,contName,panelName){
 
-    let pool = window.pageModules[pageName].contModules[contName].panelModules[panelName];
-    if(pool){
-      return pool;
+    if(
+      builder.map.get().panels &&
+      builder.map.get().panels[pageName] &&
+      builder.map.get().panels[pageName][contName] &&
+      builder.map.get().panels[pageName][contName][panelName] &&
+      builder.map.get().panels[pageName][contName][panelName].js
+    ){
+      return builder.map.get().panels[pageName][contName][panelName].js;
     } else {
       return false;
     }

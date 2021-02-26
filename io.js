@@ -1,5 +1,6 @@
 const fs = require('fs-extra');
 const get_npm_root = require("get_npm_root");
+const fs_native = require("fs");
 
 module.exports = {
 
@@ -56,6 +57,10 @@ module.exports = {
         return common.error('failed-create-dir-io');
       });
     }
+  },
+
+  file_info:(path)=>{
+    return fs_native.statSync(path);
   },
 
   copy:async (from,to)=>{

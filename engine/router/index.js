@@ -2,6 +2,11 @@
 
 module.exports = {
   set:require("./set"),
+  navigate:require('./nav'),
+  back:require('./back'),
+  init:require("./init"),
+  route:[],
+  closeures:[],
   active:{
     page:null,
     cont:null,
