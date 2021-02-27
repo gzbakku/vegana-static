@@ -19,7 +19,7 @@ module.exports = {
     },
     app:async ()=>{
       let base = await get_npm_root();
-      base += "/vegana/bin"
+      base += "/vegana-static/bin"
       return base;
     },
     app_old:()=>{

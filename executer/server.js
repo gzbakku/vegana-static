@@ -8,24 +8,32 @@ module.exports = {
 
 async function init(flag){
 
+  let cwd = await io.dir.cwd();
+
   let forced = false;
   if(flag === "--forced" || flag === "-f"){forced = true;}
 
-  const config = {
-    host:'http://localhost:5567',
-    port:5567,
-    on_unknown:'build',
-    on_unknown_build_type:'required',
-    error_page:{query:'/404',build_type:'required'},
-    urls:[
-      {query:'/main',build_type:'required'},
-      // {query:'/one',build_type:'required'},
-      // {query:'/one/two',build_type:'required'},
-      // {query:'/one/one',build_type:'required'},
-      // {query:'/one/one/one',build_type:'required'},
-      // {query:'/one/one/two',build_type:'required'},
-    ]
-  };
+  // const config = {
+  //   host:'http://localhost:5567',
+  //   port:5567,
+  //   on_unknown:'build',
+  //   on_unknown_build_type:'required',
+  //   error_page:{query:'/404',build_type:'required'},
+  //   urls:[
+  //     {query:'/main',build_type:'required'},
+  //     {query:'/one',build_type:'required'},
+  //     {query:'/one/two',build_type:'required'},
+  //     {query:'/one/one',build_type:'required'},
+  //     {query:'/one/one/one',build_type:'required'},
+  //     {query:'/one/one/two',build_type:'required'},
+  //   ]
+  // };
+
+  const config_path = cwd + "/static_config.json";
+  if(!await io.exists(config_path)){
+    return common.error("failed to read static_config.json => " + config_path);
+  }
+  const config = require(config_path);
 
   if(!engine.validate.json({
     host:{type:'string'},
@@ -52,7 +60,7 @@ async function init(flag){
     }
   }
 
-  let cwd = await io.dir.cwd();
+
   let static_path = cwd + "/build/static";
   let build_path = cwd + '/build/web';
   let build_found = await io.exists(build_path);
