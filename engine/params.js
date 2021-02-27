@@ -38,7 +38,7 @@ module.exports = {
       };
 
       let url = builder.get.url();
-      if(url){url = url.data;}
+      if(url && url.data){url = url.data;}
 
       let parsed = builder.parse_url(url);
       if(parsed){url = parsed.data;} else {return false;}

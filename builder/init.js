@@ -4,7 +4,7 @@ module.exports = {
   init:init
 };
 
-async function init(){
+async function init(host){
 
   common.tell("make sure your vegana project is building fine before running vegana-static server");
   common.tell("vegana-static server does not check validity of add in any possible way.");
@@ -18,7 +18,7 @@ async function init(){
     return common.error("failed-check_vegana_version");
   }
 
-  let build_vegana = await cmd.run("vegana build web --tryBase").then(()=>{return true;}).catch(()=>{return false;});
+  let build_vegana = await cmd.run(`vegana build web ${host}`).then(()=>{return true;}).catch(()=>{return false;});
   if(!build_vegana){
     return common.error("failed-build_vegana_app");
   }

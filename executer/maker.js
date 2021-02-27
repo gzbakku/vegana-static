@@ -53,6 +53,8 @@ async function init(url,build_type,write_path){
     return common.error("invalid url");
   }
 
+  // console.log(parse_url);
+
   window.location = {};
   window.location.href = url;
   window.location.port = parse_url.port;

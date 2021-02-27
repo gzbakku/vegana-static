@@ -12,18 +12,18 @@ async function init(flag){
   if(flag === "--forced" || flag === "-f"){forced = true;}
 
   const config = {
-    host:'https://someone.com',
+    host:'http://localhost:5567',
     port:5567,
-    on_unknown:'index',
+    on_unknown:'build',
     on_unknown_build_type:'required',
     error_page:{query:'/404',build_type:'required'},
     urls:[
       {query:'/main',build_type:'required'},
-      {query:'/one',build_type:'required'},
-      {query:'/one/two',build_type:'required'},
-      {query:'/one/one',build_type:'required'},
-      {query:'/one/one/one',build_type:'required'},
-      {query:'/one/one/two',build_type:'required'},
+      // {query:'/one',build_type:'required'},
+      // {query:'/one/two',build_type:'required'},
+      // {query:'/one/one',build_type:'required'},
+      // {query:'/one/one/one',build_type:'required'},
+      // {query:'/one/one/two',build_type:'required'},
     ]
   };
 
@@ -52,12 +52,14 @@ async function init(flag){
     }
   }
 
-  if(false && !await builder.init.init()){
+  let cwd = await io.dir.cwd();
+  let static_path = cwd + "/build/static";
+  let build_path = cwd + '/build/web';
+  let build_found = await io.exists(build_path);
+
+  if((forced || !build_found) && !await builder.init.init(config.host)){
     return common.error("failed initiate builder");
   }
-
-  let cwd = await io.dir.cwd();
-  let static_path = cwd + "/dist/static"
 
   if(!await io.dir.ensure(static_path)){
     return engine.common.error("failed-ensure-static_directory => " + static_path);
@@ -94,32 +96,53 @@ async function start_server(config,files){
 
   let cwd = await io.dir.cwd();
   let projectLocation = cwd + '/';
+  let static_path = `${cwd}/build/static`;
+  let index_path = `${cwd}/build/web/index.html`;
 
   app.use(compression());
 
   app.get('/*',async (req, res) => {
+
+    // let start = new Date().getTime();
+    // function time_elapsed(m){
+    //   console.log(`${m} ${(new Date().getTime() - start)/1000} secs`);
+    // }
+
     let combine = cwd + req.path;
     if(req.path.length > 1 && await io.exists(combine)){
+      // time_elapsed("sending asset file");
       res.sendFile(combine);
     } else {
-      // let page = builder.finish();
-      // res.set('Content-Type', 'text/html');
-      // res.send(Buffer.from(page))
-
       let hash = md5(req.path);
-
-      if(files.indexOf(hash) >= 0){
-        console.log("found");
+      const file_path = `${static_path}/${hash}.html`;
+      if(files.indexOf(hash) >= 0 || await io.exists(file_path)){
+        // time_elapsed("sending prebuilt known file");
+        res.sendFile(file_path);
       } else {
-
-        if(config.config === "build"){
-          
+        //------------------------------
+        //unknon file
+        if(config.on_unknown === "build"){
+          let build_now = await build_page(
+            config.host,
+            {
+              query:req.path,
+              build_type:config.on_unknown_build_type,
+            },
+            static_path,
+            true
+          );
+          if(!build_now && false){
+            // time_elapsed("build unknown file failed serving index");
+            res.sendFile(index_path);
+          } else {
+            // time_elapsed("sending build unknown file");
+            res.sendFile(file_path);
+          }
+        } else {
+          // time_elapsed("sending index on unknown file");
+          res.sendFile(index_path);
         }
-
-      }
-
-      res.send("hii");
-
+      }//not found
     }
   });
 
@@ -143,6 +166,7 @@ async function build_page(host,page,static_path,forced){
   const run_command = await cmd.run(command)
   .then(()=>{return true;})
   .catch(()=>{return false;});
+
   if(!run_command){return false;} else {return hash;}
 
 }

@@ -280,6 +280,20 @@ function make_structure_element(id){
 
 function parse_url(url){
   if(!url){return false;}
+
+  if(url.indexOf('localhost') >= 0){
+    let re = /(https|http):\/\/(\w{3,63}):{0,1}(\d{0,5})\/{0,1}(.*)/g
+    let collect = [...url.matchAll(re)];
+    if(!collect || collect.length === 0){return false;} else {return {
+      protocol:collect[0][1],
+      host:collect[0][2],
+      tld:null,
+      port:collect[0][3],
+      data:collect[0][4]
+    };}
+  }
+
+
   let re = /(https|http):\/\/[www.]{0,4}(\w{3,63})\.(\w{2,63}):{0,1}(\d{0,5})\/{0,1}(.*)/g;
   let collect = [...url.matchAll(re)];
   if(!collect || collect.length === 0){return false;} else {return {
