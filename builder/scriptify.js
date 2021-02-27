@@ -62,22 +62,38 @@ async function init(map,build_type){
     //this needs to be built before primary functions be added to function list
     let apis = builder.get.apis(),globals = builder.get.globals();
     mine_apis(apis,map);
-    let build_primary_functions = await collect_apis(apis,globals,map);
+    let build_engine = await collect_apis(apis,globals,map);
+    //primary functions shoudlalways be added before engine
+    add_primary_functions();
+    //this adds engine apis to function list
+    functions_compile += build_engine;
+  }
 
-    //add primary functions these are browserify dependnedcies that engine uses
+  function add_primary_functions(){
+    //add primary functions these are browserify dependnedcies that engine or the app uses
     // let primary_functions = builder.get.primary_functions();
     // for(let func of primary_functions){functions_compile += '\n' + tabify_function_string(func," ") + '\n';}
     let primary_functions = builder.get.primary_functions();
     for(let func of primary_functions){functions_compile += '\n' + tabify_function_string(func," ") + '\n';}
-
-    //this adds engine apis to function list
-    functions_compile += build_primary_functions;
   }
 
   if(build_type === "engine"){
+    let globals = builder.get.globals();
+    let global_obejct = await add_global_items('',globals);
+    add_primary_functions();//add primary global objects before engine
     //add engine as broserified module
     functions_compile += '\n' + map.packs.engine + '\n';
     functions_compile += `\nwindow.engine = Engine;\n`;
+    //add globa object
+    functions_compile += `\n\nengine.global=${global_obejct};\n\n`;
+  }
+
+  if(build_type === "bundle"){
+    let globals = builder.get.globals();
+    let global_obejct = await add_global_items('',globals);
+    //primary functions shouldbe added before engine is edited
+    add_primary_functions();
+    functions_compile += `\n\nengine.global=${global_obejct};\n\n`;
   }
 
   if(build_type === "bundle"){

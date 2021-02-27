@@ -2,8 +2,13 @@ module.exports = {
   init:init
 };
 
-async function init(url,build_type){
+async function init(url,build_type,write_path){
 
+  global.exit_on_error = true;
+
+  let startTime = new Date().getTime();
+
+  if(!url){url = ' ';}
   if(!build_type){build_type = 'required';}
 
   if(url === "--help" || url === "-h"){
@@ -20,25 +25,19 @@ async function init(url,build_type){
     return;
   }
 
-  url = 'https://somecom.co/page1?p=true';
+  // url = 'https://www.somecom.co:4200/page1?p=true';
 
   while(true){
-    if(!url || url.length < 1){
-      url = input.text('please provide a valid url');
+    let validate_url = builder.parse_url(url);
+    if(validate_url){break;}
+    if(!url || url.length < 1 || !validate_url){
+      url = await input.text('please provide a valid url');
+      if(!builder.parse_url(url)){
+        common.error("please provide a valid url");
+      }
     } else {
       break;
     }
-  }
-
-  function check_url(){
-    let re = /(https|http):\/\/(\w{3,63})\.(\w{2,63})\/{0,1}(.*)\?{0,1}(.*)/g;
-    let collect = [...url.matchAll(re)];
-    if(!collect || collect.length === 0){return false;} else {return {
-      protocol:collect[0][1],
-      host:collect[0][2],
-      tld:collect[0][3],
-      data:collect[0][4]
-    };}
   }
 
   let built_types = ['engine','bundle','required'];
@@ -49,9 +48,42 @@ async function init(url,build_type){
     }
   }
 
-  if(!check_url(url)){
+  let parse_url = builder.parse_url(url);
+  if(!parse_url){
     return common.error("invalid url");
   }
 
+  window.location = {};
+  window.location.href = url;
+  window.location.port = parse_url.port;
+  window.location.protocol = parse_url.protocol + ':';
+  window.location.hostname = `${parse_url.host}.${parse_url.tld}`;
+  window.location.pathname = parse_url.data;
+
+  builder.set.url(url);
+  builder.set.build_type(build_type);
+
+  // console.log(parse_url);
+
+  let vegana_map = await builder.map.init();
+  if(!vegana_map){
+    return common.error("failed build map");
+  }
+
+  let build = await builder.start.init().then(()=>{return true;}).catch(()=>{return false;});
+  if(!build){
+    return common.error("failed build start");
+  }
+
+  if(!write_path){
+    console.log(builder.finish());
+    return;
+  }
+
+  if(!io.write(write_path,builder.finish())){
+    return common.error("failed-write_to_file");
+  }
+
+  common.tell("page built");
 
 }

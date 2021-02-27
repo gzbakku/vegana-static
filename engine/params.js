@@ -4,8 +4,10 @@ function fetch(){
 
   let params = {};
 
-  if (/\?(.+?\=.+){1}/.test(document.URL)) {
-    document.URL.split('?')[1].split('&').forEach(function(both){
+  let url = builder.get.url();
+
+  if (/\?(.+?\=.+){1}/.test(url)) {
+    url.split('?')[1].split('&').forEach(function(both){
       var e = both.split('=');
       params[e[0]] = e[1];
     });
@@ -15,61 +17,13 @@ function fetch(){
 
 }
 
-function post(params){
-
-  let url = document.URL.split('?')[0];
-  for(var i in params){
-    if(i && params[i]){
-      if(url.indexOf("?") < 0){
-        url += '?' + i + '=' + params[i];
-      } else {
-        url += '&' + i + '=' + params[i];
-      }
-    }
-  }
-
-  window.history.pushState("object or string", null, url);
-
-  return true;
-
-}
-
 module.exports = {
 
   get : fetch,
 
-  add:(key,val)=>{
+  add:(key,val)=>{return true;},
 
-    let params = fetch();
-
-    if(typeof(key) == 'string'){
-      params[key] = val;
-    }
-
-    if(typeof(key) == 'object'){
-      for(var i in key){
-        if(i && key[i]){
-          params[i] = key[i];
-        }
-      }
-    }
-
-    post(params);
-
-  },
-
-  delete:(key)=>{
-
-    let params = fetch();
-
-    if(params.hasOwnProperty(key)){
-      delete params[key];
-      post(params);
-    }
-
-    return true;
-
-  },
+  delete:(key)=>{return true;},
 
   native:{
 
@@ -83,15 +37,15 @@ module.exports = {
         params:fetch()
       };
 
-      let url = document.URL;
-      if(url.indexOf('?') >= 0){
-        url = url.split('?')[0];
+      let url = builder.get.url();
+      if(url){url = url.data;}
+
+      let parsed = builder.parse_url(url);
+      if(parsed){url = parsed.data;} else {return false;}
+
+      if(url.indexOf("?") >= 0){
+        url = url.split("?")[0];
       }
-      url = url.replace(window.location.protocol,'');
-      url = url.replace(window.location.hostname,'');
-      url = url.replace(window.location.port,'');
-      url = url.replace('//','');
-      url = url.replace(':','');
 
       let natives = url.split('/');
 
@@ -121,20 +75,7 @@ module.exports = {
 
     },
 
-    push:(data)=>{
-
-      let hold = document.URL.split('?');
-
-      if(hold.length > 1){
-        url = hold[0] + '/' + data + '?' + hold[1];
-      } else {
-        url = hold[0] + '/' + data;
-      }
-
-      window.history.pushState("object or string", null, url);
-      return url;
-
-    }
+    push:(data)=>{return true;}
 
   }
 

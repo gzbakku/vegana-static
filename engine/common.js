@@ -10,6 +10,7 @@ module.exports= {
   },
 
   error : function(error,data){
+    if(exit_on_error){process.exit(1);}
     if(data){
       console.log(data);
     }

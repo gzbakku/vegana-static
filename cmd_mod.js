@@ -55,13 +55,13 @@ module.exports=  {
           resolve(stderr);
         }
         if(stdout){
-          console.log(stdout);
+          // console.log(stdout);
           resolve(stdout);
         }
       });
 
       // runner.stdout.on('data', (data)=>{console.log(data);});
-      runner.stdout.pipe(process.stdout);
+      // runner.stdout.pipe(process.stdout);
 
     });
 

@@ -41,6 +41,7 @@ module.exports = {
   start:require("./start"),
 
   wrap_element:wrap_element,
+  parse_url:parse_url,
 
   set:{
     url:(l)=>{url = l;},
@@ -48,6 +49,9 @@ module.exports = {
   },
 
   get:{
+
+    url:()=>{return url;},
+    build_type:()=>{return build_type;},
 
     apis:()=>{return apis;},
     functions:()=>{return functions;},
@@ -272,4 +276,17 @@ function make_structure_element(id){
       class:`${id}`
     }
   };
+}
+
+function parse_url(url){
+  if(!url){return false;}
+  let re = /(https|http):\/\/[www.]{0,4}(\w{3,63})\.(\w{2,63}):{0,1}(\d{0,5})\/{0,1}(.*)/g;
+  let collect = [...url.matchAll(re)];
+  if(!collect || collect.length === 0){return false;} else {return {
+    protocol:collect[0][1],
+    host:collect[0][2],
+    tld:collect[0][3],
+    port:collect[0][4],
+    data:collect[0][5]
+  };}
 }

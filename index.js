@@ -13,6 +13,8 @@ global.common = require("./common");
 global.cmd = require("./cmd_mod");
 global.io = require("./io");
 global.input = require("input");
+global.exit_on_error = false;
+
 
 async function main(){
 

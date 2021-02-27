@@ -4,6 +4,7 @@ module.exports = {
 
   error : function(error){
     console.log(chalk.red('!!! ' + error));
+    if(exit_on_error){return process.exit(1);}
     return false;
   },
 
