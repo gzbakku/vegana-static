@@ -116,10 +116,6 @@ function build_element_string(element,log){
         )
     ){properties += ` id="${element.id}"`;}
 
-    // if(element.style){
-
-    // }
-
     if(typeof(element.style) === "string"){
         if(element.style.length > 5){
             let style_hash = engine.md5(element.style);

@@ -270,7 +270,7 @@ function make_primary_custom_css(){
     let build = ``;
     for(let font of builder.fonts){
         let hold = ``;
-        hold += `\nfont-family: ${font.tag};\n`;
+        hold += `\nfont-family: ${font.name};\n`;
         hold += `src: url("${font.location}");\n`;
         hold = `@font-face{${hold}}`;
         build += `\n${hold}\n`;
