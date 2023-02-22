@@ -64,7 +64,7 @@ async function init(config){
             css:[]
         },
         css:[],
-        fonts:{},
+        fonts:[],
         publish:publish,
         html:require("./html_elem_builder"),
         object_to_string:require("./object_to_string"),
@@ -138,9 +138,9 @@ async function init(config){
 
 function publish(){
 
-    // console.log("publish");
-    
-    // console.log(typeof(engine));
+    //-------------------------------
+    //load primary modules
+    //-------------------------------
 
     engine.loader.load.js({
         type:'local',
@@ -149,22 +149,10 @@ function publish(){
 
     engine.loader.css("master.css",false);
     engine.loader.css("remixicon.css",false);
-
-    // console.log(builder.load.js);
-    // console.log(builder.load.css);
-
-    //build js
-    let js = ``;
-    for(let item of builder.variables){
-        js += `\n${item}\n`;
-    }
-    for(let item of builder.functions){
-        js += `\n${item}\n`;
-    }
-    for(let item of builder.functionCalls){
-        js += `\n${item}\n`;
-    }
-
+    
+    //-------------------------------
+    //make full html
+    //-------------------------------
     const body = builder.html.init(builder.HTML_ELEMENTS,"body");
     if(!body){kill();}
     const head = builder.html.init(builder.HTML_HEADERS,"head");
@@ -175,6 +163,62 @@ function publish(){
         0
     );
 
+    //-------------------------------
+    //customize final html
+    //-------------------------------
+
+    //-------------------------------
+    //meta elements
+    //-------------------------------
+    for(let key in builder.meta_name){
+        final = final.replace("</head>",` ${make_meta_html_element(builder.meta_name[key])}\n </head>`);
+    }
+    for(let item of builder.meta_noname){
+        final = final.replace("</head>",` ${make_meta_html_element(item)}\n </head>`);
+    }
+
+    //-------------------------------
+    //add css
+    //-------------------------------
+
+    //-------------------------------
+    //add css fonts
+    //-------------------------------
+    final = final.replace("</head>",` <style>
+        ${make_primary_custom_css()}
+    </style>\n </head>`);
+
+    //-------------------------------
+    //add css links
+    //-------------------------------
+    for(let item of builder.load.css){
+        final = final.replace("</head>",` ${make_css_html_element(item)}\n </head>`);
+    }
+    if(builder.icon){
+        final = final.replace("</head>",` <link red="icon" href="${builder.icon}" type="image/x-icon"/>\n </head>`);
+    }
+
+    //-------------------------------
+    //add raw css
+    //-------------------------------
+    let raw_css = '';
+    for(let item of builder.css){
+        if(item.length > 0){
+            raw_css += `${item}`;
+            if(item[item.length-1] !== "\n"){raw_css += "\n";}
+        }
+    }
+    final = final.replace("</head>",` <style>
+        ${raw_css}
+    </style>\n </head>`);
+
+    //-------------------------------
+    //add js
+    //-------------------------------
+
+    //-------------------------------
+    //add flags
+    //-------------------------------
     final = final.replace("</body>",` <script>
         window.is_static = false;
         window.is_static_web = true;
@@ -184,36 +228,9 @@ function publish(){
         window.is_web = false;
     </script>\n </body>`);
 
-    for(let item of builder.load.css){
-        // make_css_html_element(item);
-        final = final.replace("</head>",` ${make_css_html_element(item)}\n </head>`);
-    }
-    if(builder.icon){
-        final = final.replace("</head>",` <link red="icon" href="${builder.icon}" type="image/x-icon"/>\n </head>`);
-    }
-
-    for(let key in builder.meta_name){
-        final = final.replace("</head>",` ${make_meta_html_element(builder.meta_name[key])}\n </head>`);
-    }
-    for(let item of builder.meta_noname){
-        final = final.replace("</head>",` ${make_meta_html_element(item)}\n </head>`);
-    }
-
-    let raw_css = '';
-    for(let item of builder.css){
-        if(item.length > 0){
-            raw_css += `${item}`;
-            if(item[item.length-1] !== "\n"){raw_css += "\n";}
-        }
-    }
-
-    // console.log(raw_css);
-
-    final = final.replace("</head>",` <style>
-        ${raw_css}
-    </style>\n </head>`);
-
+    //-------------------------------
     //add live reload here
+    //-------------------------------
     final = final.replace("</head>",` <script type="text/javascript" src="http://localhost:5566/js/socket.io.js"></script>\n </head>`);
     final = final.replace(
         "</head>",
@@ -226,17 +243,39 @@ function publish(){
   </head>`
     );
 
-
+    //-------------------------------
+    //add js links
+    //-------------------------------
     for(let item of builder.load.js){
         final = final.replace("</body>",` ${make_js_html_element(item)}\n </body>`);
     }
 
+    //-------------------------------
+    //add custom js
+    //-------------------------------
+    let js = ``;
+    for(let item of builder.variables){js += `\n${item}\n`;}
+    for(let item of builder.functions){js += `\n${item}\n`;}
+    for(let item of builder.functionCalls){js += `\n${item}\n`;}
+    js += `\nengine.static.init();\n`;
     final = final.replace("</body>",` <script>\n${js}\n  </script>\n </body>`);
 
     process.send({
         html:final
     });
 
+}
+
+function make_primary_custom_css(){
+    let build = ``;
+    for(let font of builder.fonts){
+        let hold = ``;
+        hold += `\nfont-family: ${font.tag};\n`;
+        hold += `src: url("${font.location}");\n`;
+        hold = `@font-face{${hold}}`;
+        build += `\n${hold}\n`;
+    }
+    return build;
 }
 
 function make_meta_html_element(data){
