@@ -6,6 +6,7 @@ global.window = {};
 const server = require("uWebSockets.js");
 const builder = require("./builder/index.js");
 const cluster = require("cluster");
+const tools = require("./tools");
 
 module.exports = {
     init:init
@@ -25,6 +26,8 @@ async function init(config){
         return;
     }
 
+    
+
     build_location(config);
 
     test_builder(config);
@@ -35,9 +38,7 @@ async function init(config){
 
 async function test_builder(config){
 
-    // console.log("test_builder");
-
-    let path = "/layout?params=true";
+    let path = "";
     let headers = {};
     let url = `${location.href}${path}`;
     let fork = cluster.fork("./builder/index",['child']);
@@ -47,7 +48,8 @@ async function test_builder(config){
         location:location,
         path:path,
         url:url,
-        headers:headers
+        headers:headers,
+        cookie:''
     });
 
     // console.log({send:send});
@@ -64,41 +66,63 @@ async function start_server(config){
     app.any("/*",async (res,req)=>{
 
         res.onAborted((e) => {
-            // console.log("!!! response aborted : " + e);
             res.aborted = true;
         });
 
-        let path = `${req.getUrl()}?${req.getQuery()}`;
-        let url = `${location.href}${path}`;
         let headers = {};
         req.forEach((key,value)=>{
             headers[key] = value;
         });
+        let reqUrl = req.getUrl();
+        let reqQueries = req.getQuery();
+        let path = reqUrl;
+        if(reqQueries.length > 0){path += `?${reqQueries}`;}
+        let exists = await io.exists(`.${path}`);
+        if(typeof(exists) === undefined){
+            res.end("error");
+            return;
+        }
+
+        if(exists){
+            let read = await io.read(`.${path}`,true);
+            if(read){
+                if(res.aborted){
+                    return;
+                } else {
+                    res.end(read);
+                    return;
+                }
+            }
+        }
+
+        let url = `${location.href}${path}`;
+        let cookie = '';
+        if(headers.cookie){
+            cookie = headers.cookie.split(";");
+        }
 
         const message = {
             location:location,
             path:path,
             url:url,
-            headers:headers
+            headers:headers,
+            cookie:cookie
         };
 
-        let start = engine.time.now();
+        let start = new Date().getTime();
         let hold = await run_request(message);
-        console.log(engine.time.elapsed(start).value + ` : ${res.aborted}`);
+        let now = new Date().getTime();
+        console.log(`### request time : ${now-start} ms`);
 
         if(res.aborted){
-            // console.log("!!! response aborted");
             return;
         }
         if(!hold){
             res.end('some error');
+        } else {
+            res.end(hold);
         }
-        res.end(hold);
-
-        // res.end('Hello World! error');
-
-        // res.end('Hello World!');
-
+        
     });
 
     app.listen(config.port,(token)=>{

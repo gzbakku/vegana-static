@@ -134,6 +134,16 @@ function build_element_string(element,log){
         }
     }
 
+    // console.log({
+    //     t:element.style
+    // });
+
+    // if(element.events){
+    //     // console.log(element.events);
+    //     for(let event in element.events){
+            
+    //     }
+    // }
     const uncovered = ["onclick"];
     for(let key in element){
         if(
@@ -175,6 +185,14 @@ function build_element_string(element,log){
     let final = {start:start};
     if(element.innerHTML){final.inner = element.innerHTML;}
     if(non_ending.indexOf(element.tag) < 0){final.end = `</${element.tag}>`;}
+
+    // if(element.tag === "input"){
+    //     console.log({
+    //         e:element,
+    //         i:non_ending.indexOf(element.tag),
+    //         f:final
+    //     });
+    // }
 
     return final;
 
