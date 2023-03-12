@@ -13,6 +13,25 @@ async function init(flag){
   let forced = false;
   if(flag === "--forced" || flag === "-f"){forced = true;}
 
+<<<<<<< HEAD
+=======
+  // const config = {
+  //   host:'http://localhost:5567',
+  //   port:5567,
+  //   on_unknown:'build',
+  //   on_unknown_build_type:'required',
+  //   error_page:{query:'/404',build_type:'required'},
+  //   urls:[
+  //     {query:'/main',build_type:'required'},
+  //     {query:'/one',build_type:'required'},
+  //     {query:'/one/two',build_type:'required'},
+  //     {query:'/one/one',build_type:'required'},
+  //     {query:'/one/one/one',build_type:'required'},
+  //     {query:'/one/one/two',build_type:'required'},
+  //   ]
+  // };
+
+>>>>>>> f96a2ba7399719da0516d2e4bae0c03b8f7469ac
   const config_path = cwd + "/static_config.json";
   if(!await io.exists(config_path)){
     return common.error("failed to read static_config.json => " + config_path);
