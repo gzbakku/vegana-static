@@ -6,5 +6,9 @@ global.time = ()=>{
 }
 
 module.exports = {
-    io:io
+    io:io,
+    time:time
 };
+
+
+

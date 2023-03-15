@@ -3,7 +3,7 @@ const fssync = require("node:fs");
 
 module.exports = {
 
-  exists:async (path)=>{
+  exists:async (path,check_dir)=>{
     let access = false;
     let stats;
     try{
@@ -12,7 +12,8 @@ module.exports = {
       access = false;
     }
     if(typeof(stats) === "object"){
-      if(stats.isFile()){access = true;}
+      if(!check_dir && stats.isFile()){access = true;}
+      if(check_dir && stats.isDirectory()){access = true;}
     }
     return access;
   },

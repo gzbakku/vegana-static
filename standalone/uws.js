@@ -46,11 +46,17 @@ async function start_server(config){
         if(reqQueries.length > 0){path += `?${reqQueries}`;}
 
         let run = await request.init(path,headers,cookie);
+        if(res.aborted){
+            console.log("connection reset");
+            return;
+        }
+        
         if(run.mime){
             res.writeHeader("Content-Type",run.mime);
         }
         res.writeStatus(run.status.toString());
         res.end(run.reply);
+        console.log("request successfull");
         if(global.StaticLogTime){
             console.log(`time : ${time()-start} ms`);
         }

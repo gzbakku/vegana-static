@@ -3,21 +3,16 @@ global.window = {};
 
 // let engine = require("../vega/index");
 
-const express = require("express");
-const mime = require('mime'); 
-const app = express();
-
+const server = require("uWebSockets.js");
 const builder = require("./builder/index.js");
 const cluster = require("cluster");
 const tools = require("./tools");
-
-const setup = require('./standalone/setup');
 
 module.exports = {
     init:init
 };
 
-global.location = {
+let location = {
     protocol:'',
     hostname:'',
     port:'',
@@ -25,17 +20,15 @@ global.location = {
 
 async function init(config){
 
-    // config = config.dev;
-
-    global.env = 'dev';
+    // console.log("static sever called");
     
     if(!cluster.fork){
         return;
     }
 
-    setup.init(config);
+    
 
-    config = config[env];
+    build_location(config);
 
     test_builder(config);
 
@@ -59,63 +52,84 @@ async function test_builder(config){
         cookie:''
     });
 
-    fork.on("message",(message)=>{});
+    // console.log({send:send});
+
+    fork.on("message",(message)=>{
+        // console.log({final:message});
+    });
 
 }
 
 async function start_server(config){
+    let app = server.App();
     
-    app.all("/*",async (req,res)=>{
+    app.any("/*",async (res,req)=>{
 
-        let start = time();
-        let path = req.originalUrl;
+        res.onAborted((e) => {
+            res.aborted = true;
+        });
 
+        let headers = {};
+        req.forEach((key,value)=>{
+            headers[key] = value;
+        });
+        let reqUrl = req.getUrl();
+        let reqQueries = req.getQuery();
+        let path = reqUrl;
+        if(reqQueries.length > 0){path += `?${reqQueries}`;}
         let exists = await io.exists(`.${path}`);
         if(typeof(exists) === undefined){
-            res.send("error");
+            res.end("error");
             return;
         }
 
         if(exists){
             let read = await io.read(`.${path}`,true);
             if(read){
-                let m = mime.getType(`.${path}`);
-                if(m){res.type(m);}
-                res.send(read);
-                return;
+                if(res.aborted){
+                    return;
+                } else {
+                    res.end(read);
+                    return;
+                }
             }
         }
 
-        let headers = {};
-        for(let key in req.headers){
-            headers[key] = req.headers[key];
-        }
-        let cookie = {};
+        let url = `${location.href}${path}`;
+        let cookie = '';
         if(headers.cookie){
-            cookie = headers.cookie;
+            cookie = headers.cookie.split(";");
         }
 
         const message = {
             location:location,
             path:path,
-            url:`${location.href}${path}`,
+            url:url,
             headers:headers,
             cookie:cookie
         };
 
+        let start = new Date().getTime();
         let hold = await run_request(message);
-        let now = time();
+        let now = new Date().getTime();
         console.log(`### request time : ${now-start} ms`);
 
+        if(res.aborted){
+            return;
+        }
         if(!hold){
-            res.send('some error');
+            res.end('some error');
         } else {
-            res.send(hold);
+            res.end(hold);
         }
         
     });
 
-    app.listen(config.port,()=>{
+    app.listen(config.port,(token)=>{
+        if(!token){
+            console.error(`failed to start the static server`);
+            return;
+        }
         console.log(`static server started on port ${config.port}`);
     });
 
@@ -145,8 +159,6 @@ function run_request(message,run){
     .catch(()=>{return false;});
 }
 
-
-//old
 function build_location(config){
     
     let full = config.domain;

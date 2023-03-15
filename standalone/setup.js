@@ -20,23 +20,29 @@ async function init(config,script){
 }
 
 function build_location(config){
+
+    //setup last modified
+    global.lastModified = config.lastModified || time();
+    global.lastModified = new Date(global.lastModified).toUTCString();
+
+    config = config[global.env];
     
-    let full = config.domain;
-    if(config.domain.includes("https://")){
+    let full = config.base_url;
+    if(config.base_url.includes("https://")){
         location.protocol = 'https:';
-        config.domain = config.domain.replace("https://","");
+        config.base_url = config.base_url.replace("https://","");
     }
-    if(config.domain.includes("http://")){
+    if(config.base_url.includes("http://")){
         location.protocol = 'http:';
-        config.domain = config.domain.replace("http://","");
+        config.base_url = config.base_url.replace("http://","");
     }
-    if(/:([\d]+)/.test(config.domain)){
-        let hold = config.domain.split(':');
+    if(/:([\d]+)/.test(config.base_url)){
+        let hold = config.base_url.split(':');
         location.port = hold[1];
-        config.domain = hold[0];
+        config.base_url = hold[0];
     }
 
-    let hostname_array = config.domain.split(".");
+    let hostname_array = config.base_url.split(".");
     let tld = hostname_array.pop();
     let hostname = '';
     for(let item of hostname_array){
